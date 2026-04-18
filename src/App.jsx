@@ -11,10 +11,27 @@ import LoadingScreen from './components/LoadingScreen.jsx'
  * REGISTER BUTTON: Appears when scroll reaches the last frame.
  */
 
+function detectMobile() {
+  const isNarrow = window.matchMedia('(max-width: 768px)').matches
+  const isTouchOnly = window.matchMedia('(pointer: coarse)').matches
+  const isMobileUA = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  )
+  return isNarrow || isTouchOnly || isMobileUA
+}
+
 export default function App() {
   const [loaded, setLoaded] = useState(false)
   const [loadProgress, setLoadProgress] = useState(0)
   const [scrollProgress, setScrollProgress] = useState(0)
+  const [isMobile, setIsMobile] = useState(() => detectMobile())
+
+  // Re-detect on resize
+  useEffect(() => {
+    const handler = () => setIsMobile(detectMobile())
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   const handleLoaded = useCallback(() => {
     console.log('[App] All frames ready.')
@@ -24,6 +41,8 @@ export default function App() {
   const handleProgress = useCallback((p) => {
     setScrollProgress(p)
   }, [])
+
+  const sequencePath = isMobile ? '/frames/phone/' : '/frames/pc/'
 
   return (
     <>
@@ -38,6 +57,7 @@ export default function App() {
       {/* Frame Sequence Canvas */}
       <div className="canvas-container">
         <WebPSequence 
+          sequencePath={sequencePath}
           onProgress={handleProgress} 
           onLoaded={handleLoaded} 
           onLoadProgress={setLoadProgress}

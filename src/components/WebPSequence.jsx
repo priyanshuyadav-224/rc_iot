@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react'
  * Driven by mouse scroll (desktop) or touch swipe (mobile).
  * Reports progress to parent for HUD triggers.
  */
-export default function WebPSequence({ onProgress, onLoaded, onLoadProgress }) {
+export default function WebPSequence({ sequencePath = '/frames/pc/', onProgress, onLoaded, onLoadProgress }) {
   const canvasRef = useRef(null)
   const imagesRef = useRef([])
   const [isReady, setIsReady] = useState(false)
@@ -18,26 +18,30 @@ export default function WebPSequence({ onProgress, onLoaded, onLoadProgress }) {
 
   // 1. Preload images
   useEffect(() => {
-    console.log(`[WebPSequence] Starting preload of ${TOTAL_FRAMES} frames...`)
+    console.log(`[WebPSequence] Preloading sequence from: ${sequencePath}`)
+    
+    // Reset state for new sequence
+    setIsReady(false)
+    imagesRef.current = []
     let loadedCount = 0
     const images = []
 
     for (let i = 1; i <= TOTAL_FRAMES; i++) {
       const img = new Image()
       const frameStr = String(i).padStart(4, '0')
-      img.src = `/frames/pc/${frameStr}.webp`
+      img.src = `${sequencePath}${frameStr}.webp`
       
       img.onload = () => {
         loadedCount++
         onLoadProgress?.(Math.round((loadedCount / TOTAL_FRAMES) * 100))
         if (loadedCount === TOTAL_FRAMES) {
-          console.log('[WebPSequence] ✓ All frames loaded.')
+          console.log(`[WebPSequence] ✓ Sequence "${sequencePath}" loaded.`)
           setIsReady(true)
           onLoaded?.()
         }
       }
       img.onerror = () => {
-        console.error(`[WebPSequence] ✗ Failed to load frame: ${frameStr}`)
+        console.error(`[WebPSequence] ✗ Failed to load frame: ${frameStr} in ${sequencePath}`)
         loadedCount++
         onLoadProgress?.(Math.round((loadedCount / TOTAL_FRAMES) * 100))
         if (loadedCount === TOTAL_FRAMES) {
@@ -48,7 +52,7 @@ export default function WebPSequence({ onProgress, onLoaded, onLoadProgress }) {
       images.push(img)
     }
     imagesRef.current = images
-  }, [onLoaded, onLoadProgress])
+  }, [sequencePath, onLoaded, onLoadProgress])
 
   // 2. Scroll/Touch Listeners (Same logic as Scene.jsx)
   useEffect(() => {
